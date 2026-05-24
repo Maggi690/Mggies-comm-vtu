@@ -1,0 +1,448 @@
+{
+  "info": {
+    "name": "Universal VTU Pro API",
+    "_postman_id": "uvtp-api-v1",
+    "description": "Complete API collection for Universal VTU Pro — Production SaaS Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://api.universalvtupro.com/api", "type": "string" },
+    { "key": "token",    "value": "",   "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "api_key",  "value": "",   "type": "string" },
+    { "key": "api_secret","value": "",  "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) { pm.collectionVariables.set('token', pm.response.json().data.token); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"SecurePass123!\",\n  \"password_confirmation\": \"SecurePass123!\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('token', pm.response.json().data.token); }"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST", "header": [],
+            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Set Transaction PIN",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"pin\": \"1234\",\n  \"pin_confirmation\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/user/set-pin", "host": ["{{base_url}}"], "path": ["user", "set-pin"] }
+          }
+        },
+        {
+          "name": "Reset Transaction PIN",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"SecurePass123!\",\n  \"new_pin\": \"5678\",\n  \"new_pin_confirmation\": \"5678\"\n}" },
+            "url": { "raw": "{{base_url}}/user/reset-pin", "host": ["{{base_url}}"], "path": ["user", "reset-pin"] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john@example.com\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/forgot-password", "host": ["{{base_url}}"], "path": ["auth", "forgot-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Get Balance",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/wallet/balance", "host": ["{{base_url}}"], "path": ["wallet", "balance"] } }
+        },
+        {
+          "name": "Wallet Transactions",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/wallet/transactions?per_page=20", "host": ["{{base_url}}"], "path": ["wallet", "transactions"] } }
+        },
+        {
+          "name": "Initialize Payment (Paystack)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 5000,\n  \"gateway\": \"paystack\",\n  \"callback_url\": \"https://app.example.com/callback\"\n}" },
+            "url": { "raw": "{{base_url}}/payments/initialize", "host": ["{{base_url}}"], "path": ["payments", "initialize"] }
+          }
+        },
+        {
+          "name": "Initialize Payment (Monnify)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 10000,\n  \"gateway\": \"monnify\",\n  \"callback_url\": \"https://app.example.com/callback\"\n}" },
+            "url": { "raw": "{{base_url}}/payments/initialize", "host": ["{{base_url}}"], "path": ["payments", "initialize"] }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reference\": \"PAY-ABCDEF123456\",\n  \"gateway\": \"paystack\"\n}" },
+            "url": { "raw": "{{base_url}}/payments/verify", "host": ["{{base_url}}"], "path": ["payments", "verify"] }
+          }
+        },
+        {
+          "name": "Create Reserved Account (Monnify)",
+          "request": {
+            "method": "POST", "header": [],
+            "url": { "raw": "{{base_url}}/payments/reserved-account", "host": ["{{base_url}}"], "path": ["payments", "reserved-account"] }
+          }
+        },
+        {
+          "name": "Freeze Funds",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 1000,\n  \"reason\": \"Security hold\",\n  \"reference\": \"HOLD-001\"\n}" },
+            "url": { "raw": "{{base_url}}/wallet/freeze", "host": ["{{base_url}}"], "path": ["wallet", "freeze"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Airtime",
+      "item": [
+        {
+          "name": "Purchase Airtime",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"network\": \"mtn\",\n  \"phone\": \"08012345678\",\n  \"amount\": 500,\n  \"pin\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/airtime/purchase", "host": ["{{base_url}}"], "path": ["airtime", "purchase"] }
+          }
+        },
+        {
+          "name": "Get Airtime Status",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{base_url}}/airtime/status/AIR-TXN123", "host": ["{{base_url}}"], "path": ["airtime", "status", "AIR-TXN123"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data",
+      "item": [
+        {
+          "name": "Get Data Plans",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/data/plans?network=mtn", "host": ["{{base_url}}"], "path": ["data", "plans"] } }
+        },
+        {
+          "name": "Purchase Data",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"network\": \"mtn\",\n  \"phone\": \"08012345678\",\n  \"plan_id\": 1,\n  \"pin\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/data/purchase", "host": ["{{base_url}}"], "path": ["data", "purchase"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cable TV",
+      "item": [
+        {
+          "name": "Validate Smartcard",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"provider\": \"dstv\",\n  \"smartcard_number\": \"1234567890\"\n}" },
+            "url": { "raw": "{{base_url}}/cable/validate", "host": ["{{base_url}}"], "path": ["cable", "validate"] }
+          }
+        },
+        {
+          "name": "Subscribe Cable TV",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"provider\": \"dstv\",\n  \"smartcard_number\": \"1234567890\",\n  \"package_code\": \"DSTV5\",\n  \"amount\": 24500,\n  \"phone\": \"08012345678\",\n  \"pin\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/cable/purchase", "host": ["{{base_url}}"], "path": ["cable", "purchase"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Electricity",
+      "item": [
+        {
+          "name": "Validate Meter",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"disco\": \"ekedc\",\n  \"meter_number\": \"1234567890\",\n  \"meter_type\": \"prepaid\"\n}" },
+            "url": { "raw": "{{base_url}}/electricity/validate", "host": ["{{base_url}}"], "path": ["electricity", "validate"] }
+          }
+        },
+        {
+          "name": "Purchase Electricity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"disco\": \"ekedc\",\n  \"meter_number\": \"1234567890\",\n  \"meter_type\": \"prepaid\",\n  \"amount\": 5000,\n  \"phone\": \"08012345678\",\n  \"pin\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/electricity/purchase", "host": ["{{base_url}}"], "path": ["electricity", "purchase"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exam Pins",
+      "item": [
+        {
+          "name": "Purchase Exam Pin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"exam_type\": \"waec\",\n  \"quantity\": 1,\n  \"pin\": \"1234\"\n}" },
+            "url": { "raw": "{{base_url}}/exam/purchase", "host": ["{{base_url}}"], "path": ["exam", "purchase"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support Tickets",
+      "item": [
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Unable to purchase airtime\",\n  \"message\": \"I tried to purchase airtime but received an error message. Transaction reference: AIR-XYZ123\",\n  \"category\": \"billing\",\n  \"transaction_reference\": \"AIR-XYZ123\"\n}" },
+            "url": { "raw": "{{base_url}}/support/ticket", "host": ["{{base_url}}"], "path": ["support", "ticket"] }
+          }
+        },
+        {
+          "name": "List My Tickets",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/support/tickets", "host": ["{{base_url}}"], "path": ["support", "tickets"] } }
+        },
+        {
+          "name": "Reply to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Thank you for the response. The issue has been resolved.\"\n}" },
+            "url": { "raw": "{{base_url}}/support/ticket/1/reply", "host": ["{{base_url}}"], "path": ["support", "ticket", "1", "reply"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Developer API Keys",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api-keys", "host": ["{{base_url}}"], "path": ["api-keys"] } }
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"My App Integration\",\n  \"allowed_services\": [\"airtime\", \"data\", \"electricity\"],\n  \"webhook_url\": \"https://myapp.com/webhooks/vtu\",\n  \"daily_limit\": 500\n}" },
+            "url": { "raw": "{{base_url}}/api-keys", "host": ["{{base_url}}"], "path": ["api-keys"] }
+          }
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "DELETE", "header": [],
+            "url": { "raw": "{{base_url}}/api-keys/1", "host": ["{{base_url}}"], "path": ["api-keys", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Developer API v1",
+      "item": [
+        {
+          "name": "Purchase Airtime",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-API-Key", "value": "{{api_key}}" },
+              { "key": "X-API-Secret", "value": "{{api_secret}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"network\": \"mtn\",\n  \"phone\": \"08012345678\",\n  \"amount\": 500\n}" },
+            "url": { "raw": "{{base_url}}/v1/airtime", "host": ["{{base_url}}"], "path": ["v1", "airtime"] }
+          }
+        },
+        {
+          "name": "Purchase Data",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-API-Key", "value": "{{api_key}}" },
+              { "key": "X-API-Secret", "value": "{{api_secret}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"network\": \"mtn\",\n  \"phone\": \"08012345678\",\n  \"plan_id\": 1\n}" },
+            "url": { "raw": "{{base_url}}/v1/data", "host": ["{{base_url}}"], "path": ["v1", "data"] }
+          }
+        },
+        {
+          "name": "Get Data Plans",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{api_key}}" },
+              { "key": "X-API-Secret", "value": "{{api_secret}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/data-plans", "host": ["{{base_url}}"], "path": ["v1", "data-plans"] }
+          }
+        },
+        {
+          "name": "Get API Balance",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{api_key}}" },
+              { "key": "X-API-Secret", "value": "{{api_secret}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/balance", "host": ["{{base_url}}"], "path": ["v1", "balance"] }
+          }
+        },
+        {
+          "name": "Query Transaction",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{api_key}}" },
+              { "key": "X-API-Secret", "value": "{{api_secret}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/transaction/APIV1-AIR-ABC123", "host": ["{{base_url}}"], "path": ["v1", "transaction", "APIV1-AIR-ABC123"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('admin_token', pm.response.json().data.token); }"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@universalvtupro.com\",\n  \"password\": \"Admin@12345!\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{base_url}}/admin/reports/dashboard", "host": ["{{base_url}}"], "path": ["admin", "reports", "dashboard"] }
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{base_url}}/admin/users?per_page=20&status=active", "host": ["{{base_url}}"], "path": ["admin", "users"] }
+          }
+        },
+        {
+          "name": "List Transactions",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{base_url}}/admin/transactions?status=failed&per_page=25", "host": ["{{base_url}}"], "path": ["admin", "transactions"] }
+          }
+        },
+        {
+          "name": "Refund Transaction",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Provider confirmed failure — manual refund\"\n}" },
+            "url": { "raw": "{{base_url}}/admin/transactions/1/refund", "host": ["{{base_url}}"], "path": ["admin", "transactions", "1", "refund"] }
+          }
+        },
+        {
+          "name": "Add Provider",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"New VTU Provider\",\n  \"slug\": \"new-provider\",\n  \"api_key\": \"your-api-key\",\n  \"secret_key\": \"your-secret-key\",\n  \"endpoint\": \"https://newprovider.com/api\",\n  \"services\": [\"airtime\", \"data\"],\n  \"priority\": 4\n}" },
+            "url": { "raw": "{{base_url}}/admin/providers", "host": ["{{base_url}}"], "path": ["admin", "providers"] }
+          }
+        },
+        {
+          "name": "Blacklist IP",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"ip_address\": \"192.168.1.100\",\n  \"reason\": \"Suspicious fraudulent activity detected\"\n}" },
+            "url": { "raw": "{{base_url}}/admin/blacklist/ip", "host": ["{{base_url}}"], "path": ["admin", "blacklist", "ip"] }
+          }
+        },
+        {
+          "name": "Revenue Report",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}" }] },
+            "method": "GET", "header": [],
+            "url": { "raw": "{{base_url}}/admin/reports/revenue?from=2024-01-01&to=2024-12-31&group=month", "host": ["{{base_url}}"], "path": ["admin", "reports", "revenue"] }
+          }
+        }
+      ]
+    }
+  ]
+}

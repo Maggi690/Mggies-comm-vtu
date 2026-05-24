@@ -1,0 +1,729 @@
+openapi: 3.0.3
+info:
+  title: Universal VTU Pro API
+  description: |
+    Production-ready REST API for Universal VTU Pro SaaS platform.
+
+    ## Authentication
+    All protected endpoints require a Bearer token obtained from `/api/auth/login`.
+    Include it as: `Authorization: Bearer <token>`
+
+    ## Developer API
+    Developer API v1 endpoints use API Key authentication:
+    - `X-API-Key: your-public-key`
+    - `X-API-Secret: your-secret-key`
+
+    ## Response Format
+    All responses follow this structure:
+    ```json
+    { "success": true, "message": "...", "data": {} }
+    ```
+    Errors:
+    ```json
+    { "success": false, "message": "...", "errors": {} }
+    ```
+  version: 1.0.0
+  contact:
+    name: Universal VTU Pro Support
+    email: support@universalvtupro.com
+    url: https://universalvtupro.com
+
+servers:
+  - url: https://api.universalvtupro.com/api
+    description: Production
+  - url: http://localhost:8000/api
+    description: Local Development
+
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Wallet
+  - name: Payments
+  - name: Airtime
+  - name: Data
+  - name: Cable TV
+  - name: Electricity
+  - name: Exam Pins
+  - name: Support
+  - name: API Keys
+  - name: Developer API v1
+  - name: Admin - Users
+  - name: Admin - Providers
+  - name: Admin - Transactions
+  - name: Admin - Reports
+  - name: Admin - Blacklist
+  - name: Admin - Settings
+  - name: Admin - Support
+  - name: Webhooks
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Sanctum Personal Access Token from /auth/login"
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiSecretAuth:
+      type: apiKey
+      in: header
+      name: X-API-Secret
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: { type: object }
+
+    ErrorResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors: { type: object }
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        ulid: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        username: { type: string }
+        user_type: { type: string, enum: [user, agent, vendor, sub_reseller, admin, assistant_admin, customer_support, api_user] }
+        status: { type: string, enum: [active, suspended, banned] }
+        email_verified: { type: boolean }
+        referral_code: { type: string }
+        wallet: { $ref: '#/components/schemas/WalletBalance' }
+        created_at: { type: string, format: date-time }
+
+    WalletBalance:
+      type: object
+      properties:
+        balance: { type: number, format: float, example: 5000.00 }
+        available_balance: { type: number, format: float, example: 4500.00 }
+        ledger_balance: { type: number, format: float, example: 5000.00 }
+        frozen_balance: { type: number, format: float, example: 500.00 }
+        currency: { type: string, example: NGN }
+
+    Transaction:
+      type: object
+      properties:
+        id: { type: integer }
+        ulid: { type: string }
+        reference: { type: string, example: AIR-5F7C2A1B }
+        type: { type: string, enum: [debit, credit] }
+        service_type: { type: string, enum: [airtime, data, cable, electricity, exam, funding] }
+        amount: { type: number, format: float, example: 500.00 }
+        status: { type: string, enum: [pending, processing, successful, failed, refunded] }
+        phone: { type: string }
+        beneficiary: { type: string }
+        description: { type: string }
+        provider_reference: { type: string, nullable: true }
+        response_data: { type: object, nullable: true }
+        settled_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    DataPlan:
+      type: object
+      properties:
+        id: { type: integer }
+        network: { type: string, enum: [mtn, airtel, glo, 9mobile] }
+        plan_type: { type: string, example: sme }
+        name: { type: string, example: 1GB SME }
+        size: { type: number, example: 1 }
+        size_unit: { type: string, example: GB }
+        validity: { type: integer, example: 30 }
+        validity_unit: { type: string, example: days }
+        amount: { type: number, example: 270.00 }
+        selling_price: { type: number, example: 285.00 }
+
+    Provider:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        endpoint: { type: string }
+        status: { type: string, enum: [active, inactive, maintenance] }
+        priority: { type: integer }
+        services: { type: array, items: { type: string } }
+        success_rate: { type: number }
+        failure_rate: { type: number }
+        avg_response_time: { type: number }
+
+    Pagination:
+      type: object
+      properties:
+        total: { type: integer }
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  service: { type: string }
+                  version: { type: string }
+                  time: { type: string }
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email, phone, password, password_confirmation]
+              properties:
+                first_name: { type: string, example: John }
+                last_name: { type: string, example: Doe }
+                email: { type: string, format: email, example: john@example.com }
+                phone: { type: string, example: "08012345678" }
+                password: { type: string, minLength: 8, example: "SecurePass123!" }
+                password_confirmation: { type: string, example: "SecurePass123!" }
+                referral_code: { type: string, example: "REFCODE1" }
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user: { $ref: '#/components/schemas/User' }
+                          token: { type: string }
+        '422': { description: Validation error }
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user: { $ref: '#/components/schemas/User' }
+                          token: { type: string }
+        '401': { description: Invalid credentials }
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout (revoke token)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Logged out }
+
+  /user/set-pin:
+    post:
+      tags: [Authentication]
+      summary: Set 4-digit transaction PIN
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pin, pin_confirmation]
+              properties:
+                pin: { type: string, example: "1234", minLength: 4, maxLength: 4 }
+                pin_confirmation: { type: string, example: "1234" }
+      responses:
+        '200': { description: PIN set successfully }
+
+  /wallet/balance:
+    get:
+      tags: [Wallet]
+      summary: Get wallet balance
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Wallet balance
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletBalance' }
+
+  /payments/initialize:
+    post:
+      tags: [Payments]
+      summary: Initialize wallet funding payment
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, gateway, callback_url]
+              properties:
+                amount: { type: number, minimum: 100, example: 5000 }
+                gateway: { type: string, enum: [monnify, paystack, flutterwave], example: paystack }
+                callback_url: { type: string, format: uri, example: "https://app.example.com/callback" }
+      responses:
+        '200':
+          description: Payment initialized
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          checkout_url: { type: string }
+                          reference: { type: string }
+                          gateway: { type: string }
+                          amount: { type: number }
+
+  /airtime/purchase:
+    post:
+      tags: [Airtime]
+      summary: Purchase airtime
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [network, phone, amount, pin]
+              properties:
+                network: { type: string, enum: [mtn, airtel, glo, 9mobile], example: mtn }
+                phone: { type: string, example: "08012345678" }
+                amount: { type: number, minimum: 50, maximum: 50000, example: 500 }
+                pin: { type: string, minLength: 4, maxLength: 4, example: "1234" }
+      responses:
+        '202':
+          description: Airtime purchase queued
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          reference: { type: string }
+                          network: { type: string }
+                          phone: { type: string }
+                          amount: { type: number }
+                          status: { type: string, example: pending }
+        '422': { description: Invalid PIN or insufficient balance }
+
+  /data/plans:
+    get:
+      tags: [Data]
+      summary: Get available data plans
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: network
+          in: query
+          schema: { type: string, enum: [mtn, airtel, glo, 9mobile] }
+        - name: plan_type
+          in: query
+          schema: { type: string, enum: [sme, sme2, cg, cg2] }
+      responses:
+        '200':
+          description: Data plans
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { $ref: '#/components/schemas/DataPlan' }
+
+  /data/purchase:
+    post:
+      tags: [Data]
+      summary: Purchase data bundle
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [network, phone, plan_id, pin]
+              properties:
+                network: { type: string, enum: [mtn, airtel, glo, 9mobile] }
+                phone: { type: string, example: "08012345678" }
+                plan_id: { type: integer, example: 1 }
+                pin: { type: string, example: "1234" }
+      responses:
+        '202': { description: Data purchase queued }
+        '422': { description: Validation error }
+
+  /cable/validate:
+    post:
+      tags: [Cable TV]
+      summary: Validate cable smartcard
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, smartcard_number]
+              properties:
+                provider: { type: string, enum: [dstv, gotv, startimes] }
+                smartcard_number: { type: string, example: "1234567890" }
+      responses:
+        '200':
+          description: Smartcard details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          customer_name: { type: string }
+                          current_bouquet: { type: string, nullable: true }
+                          due_date: { type: string, nullable: true }
+
+  /cable/purchase:
+    post:
+      tags: [Cable TV]
+      summary: Subscribe or renew cable TV
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, smartcard_number, package_code, amount, pin]
+              properties:
+                provider: { type: string, enum: [dstv, gotv, startimes] }
+                smartcard_number: { type: string }
+                package_code: { type: string, example: DSTV5 }
+                amount: { type: number, minimum: 100 }
+                phone: { type: string }
+                pin: { type: string }
+      responses:
+        '202': { description: Cable subscription queued }
+
+  /electricity/validate:
+    post:
+      tags: [Electricity]
+      summary: Validate electricity meter
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disco, meter_number, meter_type]
+              properties:
+                disco: { type: string, example: ekedc, description: "Distribution company code: ekedc, ikedc, aedc, phed, kedco, jed, bedc, eedc, ibedc" }
+                meter_number: { type: string, example: "1234567890" }
+                meter_type: { type: string, enum: [prepaid, postpaid] }
+      responses:
+        '200':
+          description: Meter details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          customer_name: { type: string }
+                          address: { type: string, nullable: true }
+                          minimum_amount: { type: number }
+
+  /electricity/purchase:
+    post:
+      tags: [Electricity]
+      summary: Purchase electricity token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disco, meter_number, meter_type, amount, pin]
+              properties:
+                disco: { type: string }
+                meter_number: { type: string }
+                meter_type: { type: string, enum: [prepaid, postpaid] }
+                amount: { type: number, minimum: 100 }
+                phone: { type: string }
+                pin: { type: string }
+      responses:
+        '202': { description: Electricity purchase queued }
+
+  /exam/purchase:
+    post:
+      tags: [Exam Pins]
+      summary: Purchase exam scratch card pin
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exam_type, quantity, pin]
+              properties:
+                exam_type: { type: string, enum: [waec, neco, nabteb, jamb] }
+                quantity: { type: integer, minimum: 1, maximum: 5 }
+                pin: { type: string }
+      responses:
+        '202': { description: Exam pin purchase queued }
+
+  /v1/airtime:
+    post:
+      tags: [Developer API v1]
+      summary: Purchase airtime (Developer)
+      security: [{ ApiKeyAuth: [], ApiSecretAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [network, phone, amount]
+              properties:
+                network: { type: string, enum: [mtn, airtel, glo, 9mobile] }
+                phone: { type: string }
+                amount: { type: number }
+                reference: { type: string, description: Your unique reference }
+      responses:
+        '200':
+          description: Airtime purchased
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Transaction' }
+        '401': { description: Invalid API credentials }
+        '429': { description: Rate limit exceeded }
+
+  /v1/data:
+    post:
+      tags: [Developer API v1]
+      summary: Purchase data bundle (Developer)
+      security: [{ ApiKeyAuth: [], ApiSecretAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [network, phone, plan_id]
+              properties:
+                network: { type: string }
+                phone: { type: string }
+                plan_id: { type: integer }
+                reference: { type: string }
+      responses:
+        '200': { description: Data purchased }
+
+  /v1/balance:
+    get:
+      tags: [Developer API v1]
+      summary: Get account balance (Developer)
+      security: [{ ApiKeyAuth: [], ApiSecretAuth: [] }]
+      responses:
+        '200':
+          description: Account balance
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletBalance' }
+
+  /admin/users:
+    get:
+      tags: [Admin - Users]
+      summary: List all users
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, suspended, banned] }
+        - name: user_type
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: per_page
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Users list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/User' }
+                      meta: { $ref: '#/components/schemas/Pagination' }
+
+  /admin/reports/dashboard:
+    get:
+      tags: [Admin - Reports]
+      summary: Dashboard summary statistics
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users: { type: object }
+                          transactions: { type: object }
+                          service_breakdown: { type: array }
+                          wallet_funding_today: { type: number }
+
+  /webhooks/paystack:
+    post:
+      tags: [Webhooks]
+      summary: Paystack webhook receiver
+      description: |
+        Receives payment events from Paystack.
+        Validated using HMAC SHA-512 signature in `x-paystack-signature` header.
+        **Do not call this endpoint directly** — it is for Paystack only.
+      parameters:
+        - name: x-paystack-signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200': { description: Processed }
+        '401': { description: Invalid signature }
+
+  /webhooks/monnify:
+    post:
+      tags: [Webhooks]
+      summary: Monnify webhook receiver
+      parameters:
+        - name: monnify-signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Processed }
+
+  /webhooks/flutterwave:
+    post:
+      tags: [Webhooks]
+      summary: Flutterwave webhook receiver
+      parameters:
+        - name: verif-hash
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: Processed }
